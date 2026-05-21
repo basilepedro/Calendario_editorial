@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Editorial — Amorim Global</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<style>
+
+/* ── DESIGN SYSTEM TOKENS ──────────────────────────── */
+:root {
+  --navy:         #080e1f;
+  --navy-2:       #0d1628;
+  --navy-card:    #111c35;
+  --navy-card-2:  #162040;
+  --blue:         #004dff;
+  --blue-dim:     rgba(0,77,255,0.10);
+  --blue-border:  rgba(0,77,255,0.22);
+  --green:        #00ff5f;
+  --green-dim:    rgba(0,255,95,0.10);
+  --green-border: rgba(0,255,95,0.22);
+  --red:          #ff4454;
+  --red-dim:      rgba(255,68,84,0.10);
+  --red-border:   rgba(255,68,84,0.25);
+  --amber:        #f59e0b;
+  --amber-dim:    rgba(245,158,11,0.10);
+  --amber-border: rgba(245,158,11,0.28);
+  --purple:       #8b5cf6;
+  --purple-dim:   rgba(139,92,246,0.10);
+  --purple-border:rgba(139,92,246,0.25);
+  --text-1: rgba(255,255,255,0.95);
+  --text-2: rgba(255,255,255,0.58);
+  --text-3: rgba(255,255,255,0.33);
+  --border:   rgba(255,255,255,0.07);
+  --border-2: rgba(255,255,255,0.12);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-xl: 24px; --r-full: 9999px;
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:40px; --s6:48px;
+  --t-xs: clamp(10px,1.4vw,11px);
+  --t-sm: clamp(11px,1.6vw,12px);
+  --t-base: clamp(13px,1.8vw,14px);
+  --t-md: clamp(15px,2vw,16px);
+  --ease-out: cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── LIGHT MODE ────────────────────────────────────── */
+body.light {
+  --navy:        #f4f6fb;
+  --navy-2:      #eef1f8;
+  --navy-card:   #ffffff;
+  --navy-card-2: #f0f4ff;
+  --text-1: rgba(10,15,40,0.92);
+  --text-2: rgba(10,15,40,0.52);
+  --text-3: rgba(10,15,40,0.30);
+  --border:   rgba(10,15,40,0.08);
+  --border-2: rgba(10,15,40,0.14);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  --blue-dim:     rgba(0,77,255,0.07);
+  --blue-border:  rgba(0,77,255,0.18);
+  --green-dim:    rgba(0,160,64,0.08);
+  --green-border: rgba(0,160,64,0.20);
+  --red-dim:      rgba(255,68,84,0.08);
+  --red-border:   rgba(255,68,84,0.20);
+  --amber-dim:    rgba(245,158,11,0.08);
+  --amber-border: rgba(245,158,11,0.22);
+  --purple-dim:   rgba(139,92,246,0.08);
+  --purple-border:rgba(139,92,246,0.20);
+}
+body.light .header {
+  background: rgba(244,246,251,0.92);
+  border-bottom: 1px solid rgba(10,15,40,0.09);
+}
+body.light .orb-1 { opacity: 0.04; }
+body.light .orb-2 { opacity: 0.02; }
+body.light tbody tr:hover { background: rgba(0,77,255,0.025); }
+body.light thead th { background: rgba(10,15,40,0.025); }
+
+/* ── RESET ─────────────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; }
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--navy);
+  color: var(--text-1);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── ORBS ──────────────────────────────────────────── */
+.orb { position:fixed; border-radius:50%; pointer-events:none; z-index:0; }
+.orb-1 { width:600px;height:600px; background:radial-gradient(circle,var(--blue) 0%,transparent 70%); top:-250px;right:-150px; opacity:0.08; filter:blur(1px); }
+.orb-2 { width:400px;height:400px; background:radial-gradient(circle,#8b5cf6 0%,transparent 70%); bottom:5%;left:-100px; opacity:0.04; filter:blur(1px); }
+
+/* ── HEADER ────────────────────────────────────────── */
+.header {
+  position:sticky; top:0; z-index:100; height:52px;
+  background: rgba(8,14,31,0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+  display:flex; align-items:center;
+}
+.header-inner {
+  max-width:1280px; margin:0 auto; padding:0 var(--s3);
+  width:100%; display:flex; align-items:center; gap:var(--s2);
+}
+.logo-sep { width:1px; height:16px; background:var(--border-2); flex-shrink:0; }
+.header-title { font-size:var(--t-sm); font-weight:500; color:var(--text-2); }
+.header-date { margin-left:auto; font-size:var(--t-xs); color:var(--text-3); }
+
+/* ── LAYOUT ────────────────────────────────────────── */
+.container { max-width:1280px; margin:0 auto; padding:20px var(--s3) 64px; position:relative; z-index:1; }
+.dash-label { font-size:var(--t-xs); font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3); margin-bottom:10px; }
+
+/* ── TABS ──────────────────────────────────────────── */
+.tabs-bar { display:flex; align-items:center; border-bottom:1px solid var(--border); margin-bottom:20px; overflow-x:auto; scrollbar-width:none; }
+.tabs-bar::-webkit-scrollbar { display:none; }
+.tab-btn { padding:9px 18px; font-size:var(--t-sm); font-weight:600; color:var(--text-3); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; white-space:nowrap; transition:color 0.2s var(--ease-out); font-family:inherit; }
+.tab-btn:hover { color:var(--text-1); }
+.tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ── BADGE ─────────────────────────────────────────── */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:var(--r-sm); font-size:var(--t-xs); font-weight:600; white-space:nowrap; }
+.badge-blue   { background:var(--blue-dim);   color:#4d84ff;  border:1px solid var(--blue-border); }
+.badge-green  { background:var(--green-dim);  color:#00a03e;  border:1px solid var(--green-border); }
+.badge-red    { background:var(--red-dim);    color:#ff6470;  border:1px solid var(--red-border); }
+.badge-amber  { background:var(--amber-dim);  color:var(--amber); border:1px solid var(--amber-border); }
+.badge-purple { background:var(--purple-dim); color:#a78bfa;  border:1px solid var(--purple-border); }
+.badge-muted  { background:var(--border);     color:var(--text-3); border:1px solid var(--border-2); }
+body.light .badge-blue   { color:#0038cc; }
+body.light .badge-green  { color:#006b2e; }
+body.light .badge-purple { color:#6d28d9; }
+body.light .badge-red    { color:#c0202e; }
+body.light .badge-amber  { color:#8a5c00; }
+
+/* ── SCORE ─────────────────────────────────────────── */
+.score-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.score-card { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-md); padding:14px 16px; border-top:2px solid var(--blue-border); }
+.score-canal { font-size:var(--t-xs); font-weight:600; color:var(--text-2); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.score-row { display:flex; align-items:center; margin-bottom:6px; gap:8px; }
+.score-row-label { font-size:var(--t-xs); color:var(--text-3); width:72px; flex-shrink:0; }
+.progress-track { flex:1; height:4px; background:var(--border-2); border-radius:var(--r-full); overflow:hidden; }
+.progress-bar { height:100%; border-radius:var(--r-full); background:var(--blue); transition:width 0.8s var(--ease-out); }
+.score-num { font-size:var(--t-sm); font-weight:700; color:var(--text-1); width:26px; text-align:right; flex-shrink:0; }
+.score-base { font-size:10px; color:var(--text-3); margin-top:8px; }
+.score-alert { font-size:10px; margin-top:6px; padding:4px 8px; border-radius:var(--r-sm); }
+.alert-ok   { background:var(--green-dim);  color:#00873a; border:1px solid var(--green-border); }
+.alert-warn { background:var(--amber-dim);  color:#8a5c00; border:1px solid var(--amber-border); }
+body.light .alert-ok  { color:#005c28; }
+
+/* ── FINDINGS ──────────────────────────────────────── */
+.findings-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+.findings-card { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-md); padding:14px 16px; }
+.findings-card-title { font-size:var(--t-sm); font-weight:600; color:var(--text-1); margin-bottom:10px; }
+.finding-item { display:flex; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:var(--t-sm); line-height:1.5; color:var(--text-2); }
+.finding-item:last-child { border-bottom:none; padding-bottom:0; }
+.finding-dot { width:6px;height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.dot-red    { background:var(--red); }
+.dot-yellow { background:var(--amber); }
+.dot-green  { background:#00a03e; }
+.dot-blue   { background:var(--blue); }
+.finding-meta { font-size:10px; color:var(--text-3); margin-top:2px; }
+.vol-badge { display:inline-block; padding:1px 5px; border-radius:3px; font-size:10px; font-weight:600; margin-left:3px; }
+.vol-alto  { background:var(--red-dim);   color:#ff6470;  border:1px solid var(--red-border); }
+.vol-medio { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-border); }
+.vol-baixo { background:var(--border);    color:var(--text-3); border:1px solid var(--border-2); }
+body.light .vol-alto  { color:#c0202e; }
+body.light .vol-medio { color:#8a5c00; }
+
+/* ── MAP (sempre escuro) ───────────────────────────── */
+.map-section { background:#080e1f; border-radius:var(--r-lg); overflow:hidden; position:relative; margin-bottom:20px; border:1px solid rgba(255,255,255,0.05); }
+.map-header { padding:14px 16px 0; display:flex; align-items:center; justify-content:space-between; }
+.map-title { font-size:var(--t-xs); font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.38); }
+.map-legend { display:flex; gap:14px; }
+.map-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:rgba(255,255,255,0.42); }
+.map-legend-dot { width:7px;height:7px; border-radius:50%; }
+[id^="worldMap-"] { width:100%; height:400px; display:block; }
+.map-loading { color:rgba(255,255,255,0.22); font-size:var(--t-sm); text-align:center; padding:60px 0; }
+.map-tooltip { position:fixed; background:rgba(5,10,25,0.96); border:1px solid rgba(0,77,255,0.32); border-radius:var(--r-md); padding:10px 14px; pointer-events:none; font-size:11px; color:white; z-index:200; max-width:220px; backdrop-filter:blur(8px); display:none; }
+.map-tooltip-country { font-weight:700; font-size:12px; margin-bottom:5px; color:#7aa8ff; }
+.map-tooltip-item { font-size:10px; color:rgba(255,255,255,0.68); padding:2px 0; line-height:1.4; }
+
+/* ── PRIORITY COLUMNS ──────────────────────────────── */
+.prioridade-cols { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.prioridade-col { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-md); padding:14px; }
+.col-urgente   { border-top:2px solid var(--red); }
+.col-normal    { border-top:2px solid var(--amber); }
+.col-planejado { border-top:2px solid #00a03e; }
+.col-header { display:flex; align-items:center; gap:6px; margin-bottom:12px; }
+.col-header-title { font-size:var(--t-sm); font-weight:700; color:var(--text-1); }
+.item-card { border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; margin-bottom:8px; transition:border-color 0.15s; }
+.item-card:last-child { margin-bottom:0; }
+.item-card:hover { border-color:var(--border-2); }
+.item-tema { font-size:var(--t-sm); font-weight:600; color:var(--text-1); margin-bottom:5px; line-height:1.4; }
+.item-meta { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+.item-motivo { font-size:10px; color:var(--text-2); margin-bottom:6px; line-height:1.5; }
+
+/* ── COPY ──────────────────────────────────────────── */
+.copy-toggle { background:var(--blue-dim); color:#4d84ff; border:1px solid var(--blue-border); border-radius:var(--r-sm); padding:4px 9px; font-size:10px; font-weight:600; cursor:pointer; width:100%; text-align:left; font-family:inherit; transition:background 0.15s; }
+.copy-toggle:hover { background:rgba(0,77,255,0.16); }
+body.light .copy-toggle { color:#0038cc; }
+.copy-content { display:none; margin-top:6px; background:var(--navy-2); border-radius:var(--r-sm); padding:10px 12px; font-size:10px; line-height:1.7; color:var(--text-2); border-left:2px solid var(--blue); white-space:pre-wrap; }
+.copy-content.open { display:block; }
+.copy-meta { font-size:10px; color:var(--text-3); margin-top:3px; }
+.add-cal-btn { background:none; border:1px solid var(--border-2); border-radius:var(--r-sm); padding:3px 8px; font-size:10px; color:var(--text-3); cursor:pointer; margin-top:4px; font-family:inherit; transition:all 0.15s; }
+.add-cal-btn:hover { border-color:var(--blue); color:#4d84ff; }
+body.light .add-cal-btn:hover { color:var(--blue); }
+
+/* ── TABLE ─────────────────────────────────────────── */
+.table-wrap { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; font-size:var(--t-sm); }
+thead th { padding:9px 12px; text-align:left; font-size:var(--t-xs); font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-3); background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border); white-space:nowrap; }
+tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,0.025); }
+tbody td { padding:9px 12px; color:var(--text-2); vertical-align:top; line-height:1.5; }
+.td-primary { color:var(--text-1) !important; font-weight:500; }
+.na-cell { color:var(--text-3); font-style:italic; }
+.insight-chip { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-border); padding:2px 7px; border-radius:var(--r-sm); font-size:10px; display:inline-block; line-height:1.5; }
+body.light .insight-chip { color:#8a5c00; }
+
+/* ── GAPS ──────────────────────────────────────────── */
+.gap-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:20px; }
+.gap-card { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; display:flex; gap:10px; }
+.gap-icon { font-size:16px; flex-shrink:0; padding-top:1px; }
+.gap-tema { font-size:var(--t-sm); font-weight:600; color:var(--text-1); margin-bottom:2px; }
+.gap-info { font-size:10px; color:var(--text-3); }
+
+/* ── DIVIDER ───────────────────────────────────────── */
+.section-divider { border:none; border-top:1px solid var(--border); margin:28px 0; }
+
+/* ── CALENDAR ──────────────────────────────────────── */
+.cal-header-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+.cal-nav { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.cal-nav-btn { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-sm); padding:5px 12px; font-size:var(--t-xs); font-weight:600; cursor:pointer; color:var(--text-2); font-family:inherit; transition:all 0.15s; }
+.cal-nav-btn:hover { border-color:var(--blue); color:#4d84ff; }
+body.light .cal-nav-btn:hover { color:var(--blue); }
+.cal-week-label { font-size:var(--t-base); font-weight:700; color:var(--text-1); margin-top:3px; }
+.cal-legend { display:flex; gap:10px; flex-wrap:wrap; }
+.cal-legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-3); }
+.cal-legend-dot { width:7px;height:7px; border-radius:2px; }
+.cal-grid { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
+.cal-grid-head { display:grid; grid-template-columns:88px repeat(7,1fr); border-bottom:1px solid var(--border); }
+.cal-grid-head-cell { padding:7px 8px; font-size:10px; font-weight:700; color:var(--text-3); text-align:center; border-right:1px solid var(--border); background:var(--navy-card); }
+.cal-grid-head-cell:last-child { border-right:none; }
+.cal-grid-row { display:grid; grid-template-columns:88px repeat(7,1fr); border-bottom:1px solid var(--border); }
+.cal-grid-row:last-child { border-bottom:none; }
+.cal-row-label { padding:8px; font-size:10px; font-weight:700; color:var(--text-3); background:var(--navy-2); display:flex; align-items:flex-start; border-right:1px solid var(--border); }
+body.light .cal-row-label { background:rgba(10,15,40,0.025); }
+.cal-cell-wrap { min-height:72px; border-right:1px solid var(--border); padding:5px; cursor:pointer; transition:background 0.15s; }
+.cal-cell-wrap:last-child { border-right:none; }
+.cal-cell-wrap:hover { background:var(--blue-dim); }
+.cal-cell-wrap.today { background:rgba(0,77,255,0.05); }
+.cal-entry { border-radius:4px; padding:3px 5px; margin-bottom:3px; font-size:10px; line-height:1.4; cursor:pointer; position:relative; }
+.cal-entry:hover .cal-entry-del { display:flex; }
+.entry-urgente   { background:var(--red-dim);   border-left:2px solid var(--red);   color:#c0202e; }
+.entry-normal    { background:var(--amber-dim);  border-left:2px solid var(--amber); color:#8a5c00; }
+.entry-planejado { background:var(--green-dim);  border-left:2px solid #00a03e;      color:#005c28; }
+body.light .entry-urgente  { color:#a01828; }
+body.light .entry-normal   { color:#7a5008; }
+body.light .entry-planejado{ color:#004a20; }
+.cal-entry-del { display:none; position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.15); border:none; border-radius:3px; width:13px;height:13px; font-size:8px; cursor:pointer; align-items:center; justify-content:center; color:inherit; }
+.cal-add-hint { font-size:10px; color:var(--border-2); text-align:center; padding-top:18px; }
+
+/* ── MODAL ─────────────────────────────────────────── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--navy-card); border:1px solid var(--border-2); border-radius:var(--r-lg); padding:var(--s3); width:360px; max-width:95vw; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.modal-title { font-size:var(--t-md); font-weight:700; color:var(--text-1); margin-bottom:var(--s2); }
+.modal-field { margin-bottom:12px; }
+.modal-label { font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:block; }
+.modal-input, .modal-select { width:100%; border:1px solid var(--border-2); border-radius:var(--r-sm); padding:7px 10px; font-size:var(--t-sm); font-family:inherit; color:var(--text-1); background:var(--navy-2); outline:none; transition:border-color 0.15s; }
+.modal-input:focus, .modal-select:focus { border-color:var(--blue); }
+.modal-actions { display:flex; gap:8px; margin-top:16px; }
+.btn-primary { flex:1; background:var(--blue); color:white; border:none; border-radius:var(--r-sm); padding:9px; font-size:var(--t-sm); font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s; }
+.btn-primary:hover { background:#1a5fff; }
+.btn-cancel { background:var(--border); color:var(--text-2); border:1px solid var(--border-2); border-radius:var(--r-sm); padding:9px 16px; font-size:var(--t-sm); font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s; }
+.btn-cancel:hover { background:var(--border-2); }
+
+/* ── FOOTER ────────────────────────────────────────── */
+.footer { text-align:center; color:var(--text-3); font-size:10px; margin-top:32px; padding-top:16px; border-top:1px solid var(--border); }
+
+/* ── RESPONSIVE ────────────────────────────────────── */
+@media (max-width:1024px) { .prioridade-cols { grid-template-columns:1fr; } .score-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:768px) { .findings-grid,.gap-grid,.score-grid { grid-template-columns:1fr; } .container { padding:16px var(--s2) 48px; } }
+
+</style>
+</head>
+<body class="light">
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <img src="logo.png" alt="Amorim Global" style="height:28px;width:auto;display:block;">
+    <div class="logo-sep"></div>
+    <span class="header-title">Dashboard Editorial</span>
+    <span class="header-date">Atualizado em 21/05/2026</span>
+  </div>
+</header>
+
+<div class="map-tooltip" id="mapTooltip"></div>
+
+<div class="container">
+
+  <div class="tabs-bar" id="tabsBar">
+    <button class="tab-btn active" data-tab="w1" onclick="switchTab('w1',this)">Semana 18/05 a 24/05</button>
+    <button class="tab-btn" data-tab="w2" onclick="switchTab('w2',this)">Semana 21/05 a 27/05 <span style="background:var(--red-dim);color:#ff6470;border:1px solid var(--red-border);padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;margin-left:4px;">W2</span></button>
+  </div>
+
+  <!-- ═══════════ TAB W1 ═══════════ -->
+  <div class="tab-panel active" id="tab-w1">
+
+    <div class="dash-label">Score dos Canais</div>
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="score-canal"><span class="badge badge-blue">BR</span>@amorimglobal.br</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:75%"></div></div><span class="score-num">7,5</span></div>
+        <div class="score-row"><span class="score-row-label">Organizacao</span><div class="progress-track"><div class="progress-bar" style="width:80%"></div></div><span class="score-num">8,0</span></div>
+        <div class="score-base">Base: amostra publica (sem Insights)</div>
+        <div class="score-alert alert-warn">Alimentar com Insights para score real</div>
+      </div>
+      <div class="score-card">
+        <div class="score-canal"><span class="badge badge-green">EN</span>@amorimglobal.en</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:0%"></div></div><span class="score-num">s/d</span></div>
+        <div class="score-row"><span class="score-row-label">Organizacao</span><div class="progress-track"><div class="progress-bar" style="width:0%"></div></div><span class="score-num">s/d</span></div>
+        <div class="score-base">Perfil nao verificado nesta execucao</div>
+        <div class="score-alert alert-warn">Incluir na proxima varredura</div>
+      </div>
+      <div class="score-card">
+        <div class="score-canal"><span class="badge badge-purple">LK</span>LinkedIn Amorim Global</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:75%"></div></div><span class="score-num">7,5</span></div>
+        <div class="score-row"><span class="score-row-label">Organizacao</span><div class="progress-track"><div class="progress-bar" style="width:80%"></div></div><span class="score-num">8,0</span></div>
+        <div class="score-base">Amostra publica (datas dos posts nao confirmadas)</div>
+        <div class="score-alert alert-ok">Perfil institucional bem estruturado</div>
+      </div>
+    </div>
+
+    <div class="dash-label">O que o Manus Encontrou esta Semana</div>
+    <div class="findings-grid">
+      <div class="findings-card">
+        <div class="findings-card-title">Tendencias por Nicho</div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>Visa Bulletin junho/2026: EB-2 Current para Brasil e All Chargeability</div><div class="finding-meta">Departamento de Estado EUA <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>Portugal assina lei que dobra prazo de naturalizacao, impacto em CPLP, D7 e Golden Visa</div><div class="finding-meta">IMI Daily <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>Saida fiscal para brasileiros no exterior: IR, imoveis, investimentos e residencia fiscal</div><div class="finding-meta">Instagram publico e CNN Brasil <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div>Cidadania alema: urgencia documental e mudanca de regras em debate</div><div class="finding-meta">Resultados publicos de concorrentes <span class="vol-badge vol-medio">medio</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div>Nomade digital: mais de 50 paises com visto em 2026, destaque para Americas</div><div class="finding-meta">Global Citizen Solutions, Deel <span class="vol-badge vol-medio">medio</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-green"></div><div><div>HDE: sem movimentacao relevante esta semana</div><div class="finding-meta">Busca publica geral <span class="vol-badge vol-baixo">baixo</span></div></div></div>
+      </div>
+      <div class="findings-card">
+        <div class="findings-card-title">Datas e Perfis de Referencia</div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div><strong>Junho/2026:</strong> Visa Bulletin entra em vigor, EB-2 Current para Brasil</div><div class="finding-meta">Nicho: EB2-NIW</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div><strong>19/05:</strong> Efeitos praticos da nova lei de nacionalidade portuguesa em debate</div><div class="finding-meta">Nicho: Cidadania Portuguesa e Portugal Residencia</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div><strong>Ate 30/06:</strong> Janela semestral para planejamento fiscal e saida definitiva</div><div class="finding-meta">Nicho: Saida Fiscal e Tributacao Internacional</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-blue"></div><div><div><strong>@leonardo.a.lacerda</strong> publicou sobre saida fiscal, imoveis e webinar com auditor fiscal</div><div class="finding-meta">Gancho: "brasileiro em Portugal, atencao" e "saida fiscal definitiva"</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-blue"></div><div><div><strong>Cidadania4U</strong> expandiu para o Uruguai com US$20M de faturamento reportado</div><div class="finding-meta">Movimento competitivo: expansao LATAM e IA como narrativa</div></div></div>
+      </div>
+    </div>
+
+    <div class="map-section">
+      <div class="map-header">
+        <div class="map-title">Radar de Paises desta Semana</div>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff4454"></div>Urgente</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#f59e0b"></div>Normal</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#00a03e"></div>Planejado</div>
+        </div>
+      </div>
+      <div id="worldMap-w1"><div class="map-loading">Carregando mapa...</div></div>
+    </div>
+
+    <div class="dash-label">Sugestoes da Semana</div>
+    <div class="prioridade-cols">
+
+      <div class="prioridade-col col-urgente">
+        <div class="col-header"><span style="font-size:15px">🔴</span><span class="col-header-title">Urgente</span></div>
+        <div class="item-card">
+          <div class="item-tema">Portugal: lei de nacionalidade dobra prazo e o que muda para brasileiros</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Portuguesa</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Lei assinada esta semana. Impacto direto em D7, Golden Visa, CPLP e planejamento familiar.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Carrossel BR)</button>
+          <div class="copy-content">CAPA:
+"Portugal mudou as regras.
+Quem esta planejando nao pode esperar."
+
+CARD 2:
+A lei foi assinada esta semana.
+O prazo para naturalizacao mais que dobrou.
+Quem esta na fila precisa rever o plano agora.
+
+CARD 3 — O que mudou:
+Antes: residencia minima de 5 anos para naturalizacao.
+Agora: prazo estendido para brasileiros e CPLP tambem.
+
+CARD 4 — Quem e impactado:
+Quem tem D7 ativo.
+Quem esta aguardando Golden Visa.
+Quem planejava naturalizacao nos proximos 2 anos.
+
+CARD 5 — O que fazer:
+Revise seu planejamento com quem entende do percurso completo.
+A rota continua aberta, mas o tempo conta diferente agora.
+
+CTA:
+"Voce tem um plano ou uma esperanca?
+Fala com a gente antes de decidir."</div>
+          <div class="copy-meta">Formato: Carrossel Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Portugal: lei de nacionalidade dobra prazo','urgente','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">EB-2 NIW: junho com EB-2 Current para Brasil e o que isso significa de verdade</div>
+          <div class="item-meta"><span class="badge badge-muted">EB2-NIW</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Visa Bulletin de junho confirmado. Momento de qualificar: "current" nao e aprovacao automatica.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Reels BR)</button>
+          <div class="copy-content">GANCHO (0-3s):
+"EB-2 esta current para o Brasil. Mas calma."
+
+ROTEIRO:
+O Visa Bulletin de junho saiu.
+EB-2 NIW aparece como "current" para brasileiros.
+E ai o WhatsApp enche de mensagem: "posso entrar agora?"
+
+A resposta honesta e: depende.
+
+"Current" significa que a data de prioridade nao e barreira.
+Mas a peticao ainda precisa ser forte.
+O caso ainda precisa ser avaliado.
+A documentacao ainda precisa estar pronta.
+
+Ou seja, e um bom sinal, nao um atalho.
+
+Se voce esta nessa fila, agora e hora de revisar o processo com cuidado.
+Nao de correr.
+
+CTA:
+"Comenta aqui se voce esta acompanhando o Visa Bulletin
+e a gente te explica o que esse numero significa pro seu caso."</div>
+          <div class="copy-meta">Formato: Reels Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('EB-2 NIW: junho Current para Brasil','urgente','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">Saida fiscal: nao e so IR, imoveis, investimentos e residencia no exterior</div>
+          <div class="item-meta"><span class="badge badge-muted">Saida Fiscal</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Tema recorrente no @leonardo.a.lacerda e validado no proprio Instagram da Amorim. Janela semestral de IR se fechando.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (LinkedIn)</button>
+          <div class="copy-content">LINHA 1:
+Saida fiscal nao encerra a relacao com o Brasil.
+Ela comeca uma nova fase dela.
+
+CORPO:
+Boa parte das pessoas que formalizam a saida fiscal acredita que e um passo administrativo.
+Assina, entrega, encerra.
+
+Mas a relacao tributaria com o Brasil continua em pelo menos tres frentes:
+imoveis mantidos no pais, investimentos em instituicoes brasileiras e renda gerada aqui apos a saida.
+
+Cada um desses pontos tem regras proprias.
+E as regras mudaram nos ultimos dois anos.
+
+O que parecia resolvido pode nao estar.
+O que parece simples frequentemente nao e.
+
+FECHAMENTO:
+Para quem esta no exterior ou planejando a saida:
+quando foi a ultima vez que voce revisou sua situacao tributaria com alguem que conhece os dois lados?</div>
+          <div class="copy-meta">Formato: Post LinkedIn · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Saida fiscal: mais que IR','urgente','LK')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+      <div class="prioridade-col col-normal">
+        <div class="col-header"><span style="font-size:15px">🟡</span><span class="col-header-title">Normal — proximas 2 semanas</span></div>
+        <div class="item-card">
+          <div class="item-tema">Cidadania alema: documentos antigos, tempo e risco de perda de oportunidade</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Alema</span><span class="badge badge-blue">BR</span></div>
+          <div class="item-motivo">Concorrentes explorando urgencia documental. Amorim diferencia com rigor e clareza, sem alarmismo.</div>
+          <button class="add-cal-btn" onclick="openModal('Cidadania alema: documentos e risco temporal','normal','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">D7, D8 e Portugal apos mudanca: residencia, fiscalidade e expectativa de naturalizacao</div>
+          <div class="item-meta"><span class="badge badge-muted">Portugal Residencia</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Complemento natural ao urgente de nacionalidade portuguesa. Foca em quem ja esta la ou vai pelo D7 e D8.</div>
+          <button class="add-cal-btn" onclick="openModal('D7, D8 e Portugal apos mudanca','normal','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">Nomade digital nas Americas: Brasil, Colombia, Panama, Uruguai, requisitos e riscos fiscais</div>
+          <div class="item-meta"><span class="badge badge-muted">LATAM / Nomade</span><span class="badge badge-blue">BR</span><span class="badge badge-green">EN</span></div>
+          <div class="item-motivo">Demanda crescente em 2026. Funciona para brasileiro querendo sair (BR) e estrangeiro considerando Brasil (EN) com angulos distintos.</div>
+          <button class="add-cal-btn" onclick="openModal('Nomade digital nas Americas','normal','BR')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+      <div class="prioridade-col col-planejado">
+        <div class="col-header"><span style="font-size:15px">🟢</span><span class="col-header-title">Planejado — proximo mes</span></div>
+        <div class="item-card">
+          <div class="item-tema">HDE: o que e homologacao de decisao estrangeira e quando precisar no Brasil</div>
+          <div class="item-meta"><span class="badge badge-muted">HDE</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Sem movimentacao quente. Transformar em evergreen educativo para quem esta em divorcio internacional ou tem decisao arbitral.</div>
+          <button class="add-cal-btn" onclick="openModal('HDE: o que e e quando usar','planejado','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">Checklist semestral de internacionalizacao familiar: cidadania, visto, saida fiscal, escola, patrimonio</div>
+          <div class="item-meta"><span class="badge badge-muted">Geral</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Fim do primeiro semestre e janela natural para conteudo de revisao e planejamento.</div>
+          <button class="add-cal-btn" onclick="openModal('Checklist semestral de internacionalizacao familiar','planejado','BR')">+ Adicionar ao calendario</button>
+        </div>
+        <div class="item-card">
+          <div class="item-tema">Serie: mitos da dupla cidadania, cidadania vs residencia vs naturalizacao</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Europeia</span><span class="badge badge-blue">BR</span></div>
+          <div class="item-motivo">Serie de alta recorrencia. Gera salvamentos e DMs de qualificacao. Bom para Instagram BR em formato carrossel sequencial.</div>
+          <button class="add-cal-btn" onclick="openModal('Serie: mitos da dupla cidadania','planejado','BR')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dash-label">Inteligencia de Concorrentes</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concorrente</th><th>Tema publicado</th><th>Formato</th><th>Engajamento</th><th>Insight</th></tr></thead>
+        <tbody>
+          <tr><td class="td-primary">Cidadania4U</td><td>Storytelling de reconexao familiar e cidadania italiana</td><td>Video / Post LinkedIn</td><td>9 reacoes</td><td><span class="insight-chip">Narrativa emocional para tangibilizar processo como sonho</span></td></tr>
+          <tr><td class="td-primary">Cidadania4U</td><td>Diferenca entre legado e naturalizacao</td><td>Carrossel LinkedIn</td><td>22 reacoes</td><td><span class="insight-chip">Educativo com CTA de pre-analise gratuita</span></td></tr>
+          <tr><td class="td-primary">Cidadania4U</td><td>Cidadania alema, mudanca de regras e risco temporal</td><td>Instagram / Reel</td><td>26 likes</td><td><span class="insight-chip">Urgencia documental — Amorim diferencia com rigor</span></td></tr>
+          <tr><td class="td-primary">Cidadania4U</td><td>Expansao para o Uruguai, US$20M de faturamento</td><td>Imprensa</td><td>s/d</td><td><span class="insight-chip">Expansao LATAM e IA como narrativa competitiva</span></td></tr>
+          <tr><td class="td-primary">Mundo Vistos</td><td>Visto americano para idosos e Dia das Maes</td><td>Instagram</td><td>nao capturado</td><td><span class="insight-chip">Conteudo sazonal — Amorim diferencia com profundidade</span></td></tr>
+          <tr><td class="td-primary">The For You</td><td class="na-cell" colspan="4">Nao capturado nesta execucao — confirmar URL do perfil</td></tr>
+          <tr><td class="td-primary">Europass</td><td class="na-cell" colspan="4">Nao capturado — ambiguidade com homonimos. URL a confirmar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-label">Gaps da Amorim — Temas que Concorrentes Cobriram e Amorim Nao</div>
+    <div class="gap-grid">
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Cidadania alema com urgencia temporal e risco documental</div><div class="gap-info">Canal: Instagram BR · Formato: Carrossel educativo com tom juridico diferenciado</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Storytelling emocional de cidadania europeia (narrativa familiar)</div><div class="gap-info">Canal: Instagram BR · Formato: Reels com estrutura de reviravolta</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Expansao LATAM e posicionamento como empresa de alcance regional</div><div class="gap-info">Canal: LinkedIn · Formato: Post de autoridade institucional</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Saida fiscal: imoveis e patrimonio (angulo especifico do @leonardo.a.lacerda)</div><div class="gap-info">Canal: Instagram BR e LinkedIn · Formato: Carrossel + Post LinkedIn</div></div></div>
+    </div>
+
+  </div>
+  <!-- ═══════════ END TAB W1 ═══════════ -->
+
+  <!-- INÍCIO — ABA SEMANA 21/05 a 27/05 -->
+  <div id="tab-w2" class="tab-panel">
+
+    <!-- ALERTA DE FREQUÊNCIA -->
+    <div style="background:var(--red-dim);border:1px solid var(--red-border);border-radius:var(--r-md);padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
+      <span style="font-size:16px;flex-shrink:0;">⚠️</span>
+      <div>
+        <div style="font-size:var(--t-sm);font-weight:700;color:#ff6470;margin-bottom:3px;">Alerta de frequência — score crítico no LinkedIn</div>
+        <div style="font-size:var(--t-xs);color:var(--text-2);line-height:1.6;">Manus registrou <strong>0 posts em 7 dias no LinkedIn</strong> e apenas 1 post/semana no Instagram BR e EN. O score de conteúdo caiu para 4,0 (BR/EN) e 1,3 (LK). Objetivo mínimo: 4 publicações por semana por canal ativo.</div>
+      </div>
+    </div>
+
+    <!-- SCORE DOS CANAIS -->
+    <div class="dash-label">Score dos Canais</div>
+    <div class="score-grid">
+      <div class="score-card" style="border-top-color:var(--red-border);">
+        <div class="score-canal"><span class="badge badge-blue">BR</span>@amorimglobal.br</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:40%;background:var(--red);"></div></div><span class="score-num" style="color:var(--red);">4,0</span></div>
+        <div class="score-row"><span class="score-row-label">Organizacao</span><div class="progress-track"><div class="progress-bar" style="width:0%;"></div></div><span class="score-num" style="color:var(--text-3);">s/c</span></div>
+        <div class="score-base">Pre-voo: 1 post em 7 dias, 1 formato. Demais criterios bloqueados por login.</div>
+        <div class="score-alert alert-warn">Frequencia abaixo do ideal — meta: 4 a 7 posts/semana</div>
+      </div>
+      <div class="score-card" style="border-top-color:var(--red-border);">
+        <div class="score-canal"><span class="badge badge-green">EN</span>@amorimglobal.en</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:40%;background:var(--red);"></div></div><span class="score-num" style="color:var(--red);">4,0</span></div>
+        <div class="score-row"><span class="score-row-label">Organizacao</span><div class="progress-track"><div class="progress-bar" style="width:0%;"></div></div><span class="score-num" style="color:var(--text-3);">s/c</span></div>
+        <div class="score-base">Pre-voo: 1 post em 7 dias, 1 formato. Demais criterios bloqueados por login.</div>
+        <div class="score-alert alert-warn">Canal EN precisa de publicacao urgente esta semana</div>
+      </div>
+      <div class="score-card" style="border-top-color:var(--red-border);">
+        <div class="score-canal"><span class="badge badge-purple">LK</span>LinkedIn Amorim Global</div>
+        <div class="score-row"><span class="score-row-label">Conteudo</span><div class="progress-track"><div class="progress-bar" style="width:13%;background:var(--red);"></div></div><span class="score-num" style="color:var(--red);">1,3</span></div>
+        <div class="score-row"><span class="score-row-label">Bio e link</span><div class="progress-track"><div class="progress-bar" style="width:100%;background:#00a03e;"></div></div><span class="score-num" style="color:#00a03e;">10</span></div>
+        <div class="score-base">0 posts em 7 dias · 8.008 seguidores · bio e link confirmados</div>
+        <div class="score-alert alert-warn">Retomar LinkedIn e prioridade critica desta semana</div>
+      </div>
+    </div>
+
+    <!-- O QUE O MANUS ENCONTROU -->
+    <div class="dash-label">O que o Manus Encontrou esta Semana</div>
+    <div class="findings-grid">
+      <div class="findings-card">
+        <div class="findings-card-title">Tendencias por Nicho</div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>IRPF 2026 e Declaracao de Saida Definitiva — prazo 29/05/2026. Risco de residencia fiscal indevida, multa e bitributacao.</div><div class="finding-meta">Receita Federal / busca publica <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>Mudanca da Lei da Nacionalidade Portuguesa 2026: prazo de naturalizacao aumenta, criterios de integracao mais rigidos.</div><div class="finding-meta">Global Citizen Solutions, 08/05/2026 <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div>"Cidadania italiana acabou?" — concorrentes exploram ansiedade regulatoria. Espaco para analise equilibrada.</div><div class="finding-meta">Patria Cidadania, GHF Consult <span class="vol-badge vol-alto">alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div>Visa Bulletin junho/2026: EB-2 e Final Action Dates — interpretacao tecnica de "current" para profissionais qualificados.</div><div class="finding-meta">Departamento de Estado EUA <span class="vol-badge vol-medio">medio-alto</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div>STJ reforca limites para HDE em sucessoes, inventarios e partilha de bens no Brasil.</div><div class="finding-meta">STJ, 08/05/2026 <span class="vol-badge vol-medio">medio</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div>Gap editorial: "saida fiscal nao e perda de cidadania" — objecao emocional nao respondida pelos canais Amorim.</div><div class="finding-meta">Analise de gaps vs perfis de referencia <span class="vol-badge vol-medio">medio</span></div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-green"></div><div><div>Cidadania alema: §15 e prova documental — concorrentes tecnicos ativos (Hannover, Bofinger).</div><div class="finding-meta">Busca publica e paginas institucionais <span class="vol-badge vol-baixo">medio</span></div></div></div>
+      </div>
+      <div class="findings-card">
+        <div class="findings-card-title">Datas e Alertas da Semana</div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div><strong>29/05/2026:</strong> Prazo final IRPF 2026 e Declaracao de Saida Definitiva. Janela de 24 a 72h para publicar sequencia de alerta.</div><div class="finding-meta">Nicho: Saida Fiscal / Tributacao Internacional</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-red"></div><div><div><strong>Final de maio:</strong> Monitoramento de regras transitorias da nova lei portuguesa e duvidas sobre quem ainda pode aplicar.</div><div class="finding-meta">Nicho: Cidadania Portuguesa / Portugal Residencia</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div><strong>Junho/2026:</strong> Visa Bulletin entra em vigor — diferenca entre Final Action Dates e Application Dates para EB-2.</div><div class="finding-meta">Nicho: EB2-NIW</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-yellow"></div><div><div><strong>10/06/2026:</strong> Dia de Portugal — gancho emocional e institucional para cidadania portuguesa (planejar agora).</div><div class="finding-meta">Nicho: Cidadania Portuguesa</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-blue"></div><div><div><strong>Novos concorrentes detectados:</strong> GHF Consult (cidadania italiana), Bofinger (cidadania alema), GM Cidadania (Portugal), LIV Law e Linhares Law (EB2-NIW).</div><div class="finding-meta">Bloco 3B — 5 perfis para monitorar</div></div></div>
+        <div class="finding-item"><div class="finding-dot dot-blue"></div><div><div><strong>Gioppo & Conti Cidadania Italiana:</strong> Storytelling familiar e decisoes de futuro — referencia editorial de alto valor narrativo.</div><div class="finding-meta">Referencia para nicho cidadania italiana</div></div></div>
+      </div>
+    </div>
+
+    <!-- MAPA -->
+    <div class="map-section">
+      <div class="map-header">
+        <div class="map-title">Radar de Paises desta Semana</div>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff4454"></div>Urgente</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#f59e0b"></div>Normal</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#00a03e"></div>Planejado</div>
+        </div>
+      </div>
+      <div id="worldMap-w2"><div class="map-loading">Carregando mapa...</div></div>
+    </div>
+
+    <!-- COLUNAS DE PRIORIDADE -->
+    <div class="dash-label">Sugestoes da Semana</div>
+    <div class="prioridade-cols">
+
+      <!-- URGENTES -->
+      <div class="prioridade-col col-urgente">
+        <div class="col-header"><span style="font-size:15px">🔴</span><span class="col-header-title">Urgente</span></div>
+
+        <div class="item-card">
+          <div class="item-tema">IRPF 2026 e Saida Definitiva — prazo 29/05</div>
+          <div class="item-meta"><span class="badge badge-muted">Saida Fiscal</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Janela real de 24 a 72h. Quem mora fora e nao comunicou a saida continua residente fiscal brasileiro, com risco de multa e bitributacao.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Reels BR)</button>
+          <div class="copy-content">GANCHO (0–3s):
+"Morar fora nao significa ter saido do Brasil. Fiscalmente."
+
+ROTEIRO:
+Tem gente morando em Portugal, nos EUA, na Alemanha ha dois, tres anos.
+Pagando aluguel la. Vivendo la.
+E ainda constando como residente fiscal no Brasil.
+
+Nao porque quis. Porque nao fez a comunicacao formal.
+
+E ai o que acontece?
+Continua obrigado a declarar o IRPF.
+Os rendimentos do exterior entram na base de calculo.
+E o risco de bitributacao e real.
+
+A data limite para a Declaracao de Saida Definitiva
+se encerra em 29 de maio.
+Esse mes. Essa semana.
+
+Se voce saiu ou esta saindo, esse prazo importa pra voce.
+
+CTA:
+"Voce tem certeza do seu status fiscal?
+Manda 'saida' aqui nos comentarios que a gente explica o proximo passo."</div>
+          <div class="copy-meta">Formato: Reels Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)" style="margin-top:6px;">Ver copy de exemplo (Post LinkedIn)</button>
+          <div class="copy-content">LINHA 1:
+Morar fora do Brasil nao encerra, automaticamente, a relacao fiscal com ele.
+
+CORPO:
+A Declaracao de Saida Definitiva do Pais e um ato formal.
+Sem ela, o contribuinte permanece como residente fiscal brasileiro,
+independentemente de onde vive, paga impostos ou mantem contas.
+
+O prazo para a declaracao de saida referente ao ano-calendario 2025
+se encerra em 29 de maio de 2026.
+
+As consequencias de nao fazer essa comunicacao vao alem de uma multa:
+incluem obrigacao de declarar rendimentos do exterior,
+risco de bitributacao em paises com acordo com o Brasil,
+e exposicao em bens mantidos aqui.
+
+O pior cenario nao e pagar mais imposto.
+E descobrir que havia uma obrigacao que ninguem explicou.
+
+FECHAMENTO:
+Para quem orienta clientes com presenca internacional:
+quando foi a ultima vez que voce revisou o status de residencia fiscal de cada um?</div>
+          <div class="copy-meta">Formato: Post LinkedIn · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('IRPF 2026 e Saida Definitiva','urgente','BR')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">Lei da Nacionalidade Portuguesa 2026 — o plano ainda faz sentido?</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Portuguesa</span><span class="badge badge-blue">BR</span><span class="badge badge-green">EN</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Alto volume. Impacto direto em D7, Golden Visa e CPLP. Janela de duvidas ativa — quem esta planejando quer saber se ainda vale a pena.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Carrossel BR)</button>
+          <div class="copy-content">CAPA:
+"O caminho ate a cidadania portuguesa ficou mais longo.
+O seu plano ainda faz sentido?"
+
+CARD 2:
+Em 2026, Portugal alterou a lei de nacionalidade.
+O prazo de residencia para pedir naturalizacao aumentou.
+E as regras de integracao ficaram mais rigidas.
+
+CARD 3 — O que mudou na pratica:
+Antes: residencia minima de 5 anos para naturalizacao padrao.
+Agora: requisitos adicionais de integracao e possivel extensao do prazo
+dependendo do caminho escolhido.
+Quem entrou pelo D7 ou Golden Visa precisa revisar a conta.
+
+CARD 4 — Quem e afetado:
+A pessoa que entrou pelo D7 e esperava naturalizar em 5 anos.
+A pessoa com Golden Visa que contava com o prazo atual.
+A familia que planejou cidadania pelos filhos nascidos la.
+
+CARD 5 — O que ainda esta aberto:
+O caminho nao fechou. Ele mudou de forma.
+Planejamento antecipado passa a valer ainda mais.
+
+CARD 6:
+"Voce tem um plano de cidadania desenhado para as regras de 2026?
+Ou para as regras de 2022?"
+
+CTA:
+"Comenta 'Portugal' aqui e a gente analisa o seu caminho com as regras atuais."</div>
+          <div class="copy-meta">Formato: Carrossel Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)" style="margin-top:6px;">Ver copy de exemplo (Carrossel EN)</button>
+          <div class="copy-content">CAPA:
+"Portugal changed its nationality law in 2026.
+Here's what it means if you're already here."
+
+CARD 2 — What changed:
+The minimum residency requirement for naturalization has increased.
+New integration criteria are now required.
+Transitional rules are still being confirmed.
+
+CARD 3 — Who is directly affected:
+D7 holders planning naturalization within 5 years.
+Golden Visa holders counting on current timelines.
+Families with children born in Portugal.
+
+CARD 4 — What to check now:
+When did you register your residency?
+Is your language documentation up to date?
+Have you started gathering civil records for naturalization?
+
+CARD 5:
+"The route is still open. But the timeline just changed.
+Talk to someone who tracks these updates every week."</div>
+          <div class="copy-meta">Formato: Carrossel Instagram EN · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Lei Nacionalidade Portuguesa 2026','urgente','BR')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">Cidadania italiana — analise equilibrada, sem alarmismo</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Italiana</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Patria Cidadania e GHF Consult exploram ansiedade regulatoria com gancho "acabou". Amorim ocupa o espaco com analise solida e sem alarmismo.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Reels BR)</button>
+          <div class="copy-content">GANCHO (0–3s):
+"Cidadania italiana acabou? Vou te responder sem alarmismo."
+
+ROTEIRO:
+Nos ultimos dias, apareceram varios conteudos com esse titulo.
+Alguns sao de escritorios. Outros de pessoas que ouviram falar.
+Quase todos tem um ponto em comum: criam urgencia sem explicar o quadro completo.
+
+O que de fato mudou:
+A Italia revisou criterios de reconhecimento de descendencia em contextos especificos.
+Casos com multiplas geracoes, descendencia por linha materna e transmissao por naturalizacao
+passaram a ter escrutinio maior.
+
+O que nao mudou:
+O direito existe. Os caminhos existem. A documentacao importa mais do que nunca.
+
+A diferenca entre quem consegue e quem desiste esta em ter a analise certa antes de comecar.
+Nao em entrar correndo porque alguem disse que "acabou".
+
+CTA:
+"Voce tem ascendencia italiana e nao sabe se se qualifica?
+Manda 'Italia' nos comentarios."</div>
+          <div class="copy-meta">Formato: Reels Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)" style="margin-top:6px;">Ver copy de exemplo (Post LinkedIn)</button>
+          <div class="copy-content">LINHA 1:
+A cidadania italiana nao acabou. Mas a simplicidade do caminho, sim.
+
+CORPO:
+Nas ultimas semanas, o tema voltou a circular com intensidade nos canais de imigracao.
+Parte do volume vem de decisoes reais em casos de descendencia por multiplas geracoes.
+Parte vem de conteudo que amplifica a incerteza sem contextualizar.
+
+O que e relevante saber:
+
+A Italia mantem o instituto do jus sanguinis.
+Mas os requisitos probatorios estao mais exigentes em casos de descendencia por linha materna,
+transmissao durante periodo de naturalizacao do antepassado e situacoes de renuncia.
+
+O efeito pratico: um caso que parecia simples pode nao ser.
+E um caso que parece impossivel pode ter caminho com a analise certa.
+
+O que diferencia quem avanca e a qualidade da documentacao e a precisao da analise preliminar.
+Nao a velocidade da entrada.
+
+FECHAMENTO:
+Para quem atua com familias com ascendencia italiana:
+o melhor servico e dizer a verdade sobre o caso antes de aceitar o mandato.</div>
+          <div class="copy-meta">Formato: Post LinkedIn · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Cidadania italiana sem alarmismo','urgente','BR')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+      <!-- NORMAIS -->
+      <div class="prioridade-col col-normal">
+        <div class="col-header"><span style="font-size:15px">🟡</span><span class="col-header-title">Normal — proximas 2 semanas</span></div>
+
+        <div class="item-card">
+          <div class="item-tema">Visa Bulletin junho/2026 e EB2-NIW — "current" nao e aprovacao automatica</div>
+          <div class="item-meta"><span class="badge badge-muted">EB2-NIW</span><span class="badge badge-purple">LK</span><span class="badge badge-blue">BR</span></div>
+          <div class="item-motivo">Tema tecnico de autoridade. Bom para medicos, pesquisadores e profissionais qualificados. LinkedIn como canal principal.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Post LinkedIn)</button>
+          <div class="copy-content">"Current" no Visa Bulletin nao significa caso aprovado. Significa que a fila nao e mais o obstaculo.
+
+O boletim de junho de 2026 traz movimento favoravel para brasileiros na categoria EB-2.
+Mas ha uma confusao recorrente que vale clarificar:
+
+Estar "current" em Final Action Dates significa que a data de prioridade do caso
+nao e mais o fator limitante para avancar.
+
+Nao significa aprovacao automatica.
+Nao significa que a peticao pode ser protocolada sem preparacao.
+Nao significa que todos os casos sao elegiveis para ajuste de status imediato.
+
+O que muda de fato: para quem ja tem peticao aprovada e data de prioridade adequada,
+o caminho para o proximo passo fica aberto.
+Para quem ainda esta construindo o caso, a janela exige narrativa probatoria solida.
+
+A diferenca entre aproveitar o momento e perder a oportunidade esta nos detalhes do caso.
+
+FECHAMENTO:
+Para profissionais qualificados que acompanham esse boletim:
+o que esta mais avancado no seu caso — a documentacao ou a decisao de entrar?</div>
+          <div class="copy-meta">Formato: Post LinkedIn · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Visa Bulletin junho e EB2-NIW','normal','LK')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">HDE e sucessoes internacionais — decisao estrangeira nao resolve bens no Brasil</div>
+          <div class="item-meta"><span class="badge badge-muted">HDE / Sucessoes</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">STJ reforcou o entendimento em maio/2026. Alta aderencia a familias internacionais e B2B. Canal LinkedIn como principal.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Post LinkedIn)</button>
+          <div class="copy-content">Uma decisao estrangeira nao resolve, automaticamente, bens situados no Brasil.
+
+O STJ reforcou esse entendimento em maio de 2026.
+
+Em sucessoes e inventarios com bens no Brasil,
+a homologacao de atos estrangeiros tem limites claros:
+a competencia da Justica brasileira sobre patrimonio situado aqui nao e afastada
+por decisao proferida no exterior.
+
+O impacto pratico para familias com presenca internacional:
+um inventario concluido na Alemanha, em Portugal ou nos EUA
+pode nao ter efeito automatico sobre imoveis ou contas no Brasil.
+
+Sao dois caminhos que precisam ser percorridos em paralelo.
+Nao em sequencia.
+
+Quem planeja sucessao internacional sem considerar isso
+pode deixar herdeiros diante de uma situacao que acreditavam encerrada.
+
+FECHAMENTO:
+Voce tem clientes com patrimonio em mais de um pais?
+A estrutura de sucessao deles contempla os dois lados?</div>
+          <div class="copy-meta">Formato: Post LinkedIn · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('HDE e sucessoes internacionais STJ','normal','LK')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">Saida fiscal nao e perda de cidadania nem de passaporte</div>
+          <div class="item-meta"><span class="badge badge-muted">Saida Fiscal</span><span class="badge badge-blue">BR</span></div>
+          <div class="item-motivo">Gap editorial identificado. Responde objecao emocional que paralisa a decisao de comunicar a saida definitiva.</div>
+          <button class="copy-toggle" onclick="toggleCopy(this)">Ver copy de exemplo (Reels BR)</button>
+          <div class="copy-content">GANCHO (0–3s):
+"Fazer a saida fiscal nao significa abrir mao do Brasil."
+
+ROTEIRO:
+Esse e o medo que mais paralisa quem esta fora.
+"Se eu comunicar a saida, perco meu passaporte?"
+"Deixo de ser brasileiro?"
+"Nao posso mais morar no Brasil depois?"
+
+A resposta para as tres e nao.
+
+Saida fiscal e uma comunicacao tributaria.
+Ela informa a Receita Federal que voce deixou de ser residente fiscal no Brasil.
+Nao interfere na sua cidadania. Nao cancela seu passaporte.
+Nao impede que voce volte a morar aqui quando quiser.
+
+O que muda e a relacao com o IRPF e os rendimentos do exterior.
+O que fica igual e o que voce e: brasileiro.
+
+CTA:
+"Voce tinha esse medo? Comenta aqui com 'eu tambem'.
+Tem muita gente na mesma situacao."</div>
+          <div class="copy-meta">Formato: Reels Instagram BR · Filtro AMORA: aprovado</div>
+          <button class="add-cal-btn" onclick="openModal('Saida fiscal nao e perda de cidadania','normal','BR')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+      <!-- PLANEJADOS -->
+      <div class="prioridade-col col-planejado">
+        <div class="col-header"><span style="font-size:15px">🟢</span><span class="col-header-title">Planejado — proximo mes</span></div>
+
+        <div class="item-card">
+          <div class="item-tema">Cidadania alema: §15, prova documental e antepassado antes de 1904</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Alema</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Serie 3 partes: o que e §15, quais documentos provam, onde buscar registros historicos. Hannover e Bofinger estao ativos nesse nicho.</div>
+          <button class="add-cal-btn" onclick="openModal('Cidadania alema: §15 e prova documental','planejado','BR')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">Profissionais qualificados — trilha comparativa EUA, Portugal, Alemanha, Espanha</div>
+          <div class="item-meta"><span class="badge badge-muted">Profissionais</span><span class="badge badge-blue">BR</span><span class="badge badge-purple">LK</span></div>
+          <div class="item-motivo">Carrossel com personas por profissao (medico, pesquisador, tech). Referencia editorial: The For You, Linhares Law, LIV Law.</div>
+          <button class="add-cal-btn" onclick="openModal('Trilha profissionais qualificados','planejado','BR')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">10/06 — Dia de Portugal: gancho emocional para cidadania portuguesa</div>
+          <div class="item-meta"><span class="badge badge-muted">Cidadania Portuguesa</span><span class="badge badge-blue">BR</span><span class="badge badge-green">EN</span></div>
+          <div class="item-motivo">Data simbolica e institucional. Versao emocional para BR, versao de orientacao para EN. Planejar agora para publicar em 10/06.</div>
+          <button class="add-cal-btn" onclick="openModal('10/06 Dia de Portugal — cidadania','planejado','BR','2026-06-10')">+ Adicionar ao calendario</button>
+        </div>
+
+        <div class="item-card">
+          <div class="item-tema">Digital nomads e LATAM relocation</div>
+          <div class="item-meta"><span class="badge badge-muted">LATAM / Nomade</span><span class="badge badge-blue">BR</span><span class="badge badge-green">EN</span></div>
+          <div class="item-motivo">BR: brasileiro quer flexibilidade de rota. EN: estrangeiro no Brasil explora vizinhanca. Publicar apos 10/06.</div>
+          <button class="add-cal-btn" onclick="openModal('Digital nomads e LATAM relocation','planejado','EN')">+ Adicionar ao calendario</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CONCORRENTES -->
+    <div class="dash-label">Inteligencia de Concorrentes</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concorrente</th><th>Tema capturado</th><th>Formato</th><th>Engajamento</th><th>Insight</th></tr></thead>
+        <tbody>
+          <tr><td class="td-primary">Patria Cidadania</td><td>"A cidadania italiana acabou?" + live</td><td>Post + live Instagram</td><td>nao capturado</td><td><span class="insight-chip">Usa ansiedade regulatoria — Amorim diferencia com analise equilibrada</span></td></tr>
+          <tr><td class="td-primary">Cidadania4U</td><td>Cidadania portuguesa em 2026</td><td>Blog institucional</td><td>nao capturado (authwall)</td><td><span class="insight-chip">Evergreen atualizado — Amorim pode fazer comparativo Portugal x Alemanha</span></td></tr>
+          <tr><td class="td-primary">Hannover Cidadania Alema</td><td>Antepassado alemao antes de 1904, prova documental, evento com Consulado</td><td>Instagram + evento presencial</td><td>nao capturado</td><td><span class="insight-chip">Abordagem tecnica forte — Amorim diferencia com §15 e casos historicos</span></td></tr>
+          <tr><td class="td-primary">Europass Cidadania</td><td>Dia da Europa / cidadania europeia</td><td>nao capturado</td><td>nao capturado</td><td><span class="insight-chip">Usa calendario simbolico — oportunidade para Amorim usar 10/06 Dia de Portugal</span></td></tr>
+          <tr><td class="td-primary">The For You</td><td>Dev brasileiro na Europa; Alemanha, Portugal Tech Visa, Espanha</td><td>nao capturado</td><td>nao capturado</td><td><span class="insight-chip">Une profissao + destino + rota — Amorim pode criar trilha para profissionais qualificados</span></td></tr>
+          <tr><td class="td-primary">GHF Consult Brasil</td><td>Cidadania italiana e Cassacao italiana</td><td>Instagram (maio/2026)</td><td>nao capturado</td><td><span class="insight-chip">Concorrente direto novo — incluir no monitoramento permanente</span></td></tr>
+          <tr><td class="td-primary">Bofinger Cidadania</td><td>Cidadania alema no Brasil e novas regras</td><td>Posts e Reels recentes</td><td>nao capturado</td><td><span class="insight-chip">Concorrente direto em cidadania alema — comparar com Hannover para benchmarking</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- GAPS -->
+    <div class="dash-label">Gaps da Amorim — Temas sem Cobertura Identificada</div>
+    <div class="gap-grid">
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Saida fiscal nao e perda de cidadania/passaporte (objecao emocional)</div><div class="gap-info">Canal: Instagram BR · Formato: Reels "mito ou verdade"</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Cidadania italiana com analise equilibrada vs alarmismo de concorrentes</div><div class="gap-info">Canal: Instagram BR + LinkedIn · Formato: Reels + Post autoridade</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Trilha para profissionais qualificados: profissao + rota migratoria</div><div class="gap-info">Canal: Instagram BR + LinkedIn · Formato: Carrossel comparativo + Post B2B</div></div></div>
+      <div class="gap-card"><div class="gap-icon">📋</div><div><div class="gap-tema">Infoprodutores e estrutura internacional: quando operacao digital exige estrutura fora do Brasil</div><div class="gap-info">Canal: LinkedIn + Instagram BR · Formato: Artigo curto / Post de autoridade</div></div></div>
+    </div>
+
+    <!-- NOVOS PERFIS SUGERIDOS -->
+    <div class="dash-label">Novos Perfis para Monitorar (Bloco 3B)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Handle / Nome</th><th>Nicho</th><th>Classificacao</th><th>Motivo para monitorar</th></tr></thead>
+        <tbody>
+          <tr><td class="td-primary">@ghfconsult / GHF Consult Brasil</td><td>Cidadania italiana / europeia</td><td><span class="badge badge-red">Concorrente direto</span></td><td>Pauta recente sobre cidadania italiana e Cassacao; emergente em maio/2026</td></tr>
+          <tr><td class="td-primary">Bofinger Cidadania</td><td>Cidadania alema</td><td><span class="badge badge-red">Concorrente direto</span></td><td>Conteudo tecnico sobre cidadania alema no Brasil e novas regras; comparar com Hannover</td></tr>
+          <tr><td class="td-primary">Linhares Law</td><td>EB2-NIW / imigracao EUA</td><td><span class="badge badge-amber">Referencia editorial</span></td><td>Conteudo especifico sobre adequacao de perfil EB2-NIW; referencia para tom tecnico</td></tr>
+          <tr><td class="td-primary">LIV Law Escritorio de Advocacia</td><td>Visa Bulletin / categorias EB</td><td><span class="badge badge-amber">Referencia editorial</span></td><td>Atualizacoes tecnicas sobre Visa Bulletin; util para benchmarking de autoridade</td></tr>
+          <tr><td class="td-primary">@gmcidadania / GM Cidadania Europeia</td><td>Cidadania europeia / Portugal</td><td><span class="badge badge-red">Concorrente direto</span></td><td>Emergente com pauta sobre cenario europeu 2026 e Portugal; monitorar frequencia</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- FIM — ABA SEMANA 21/05 a 27/05 -->
+
+  <!-- NOVA_ABA_AQUI -->
+
+  <hr class="section-divider">
+
+  <div id="calendarSection">
+    <div class="cal-header-row">
+      <div>
+        <div class="dash-label" style="margin-bottom:4px">Calendario Editorial</div>
+        <div class="cal-week-label" id="calWeekLabel"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div class="cal-legend">
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>Urgente</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--amber)"></div>Normal</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#00a03e"></div>Planejado</div>
+        </div>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calNav(-1)">Semana anterior</button>
+          <button class="cal-nav-btn" onclick="calNav(0)">Hoje</button>
+          <button class="cal-nav-btn" onclick="calNav(1)">Proxima semana</button>
+        </div>
+      </div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-grid-head" id="calHead"></div>
+      <div class="cal-grid-row" id="calRowBR"></div>
+      <div class="cal-grid-row" id="calRowEN"></div>
+      <div class="cal-grid-row" id="calRowLK"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Clique em qualquer celula para adicionar um conteudo. Os dados sao salvos automaticamente no navegador.</div>
+  </div>
+
+  <div class="footer">Dashboard Editorial Amorim Global · Atualizar toda semana apos nova varredura do Manus</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Adicionar ao Calendario</div>
+    <div class="modal-field"><label class="modal-label">Tema</label><input type="text" class="modal-input" id="mTema" placeholder="Ex: Portugal: lei de nacionalidade"></div>
+    <div class="modal-field"><label class="modal-label">Data</label><input type="date" class="modal-input" id="mData"></div>
+    <div class="modal-field"><label class="modal-label">Canal</label>
+      <select class="modal-select" id="mCanal">
+        <option value="BR">Instagram BR (@amorimglobal.br)</option>
+        <option value="EN">Instagram EN (@amorimglobal.en)</option>
+        <option value="LK">LinkedIn</option>
+      </select>
+    </div>
+    <div class="modal-field"><label class="modal-label">Formato</label>
+      <select class="modal-select" id="mFormato">
+        <option value="Carrossel">Carrossel</option>
+        <option value="Reels">Reels / TikTok</option>
+        <option value="Post estatico">Post estatico</option>
+        <option value="Stories">Stories</option>
+        <option value="LinkedIn post">LinkedIn post</option>
+        <option value="YouTube">YouTube</option>
+      </select>
+    </div>
+    <div class="modal-field"><label class="modal-label">Prioridade</label>
+      <select class="modal-select" id="mPrioridade">
+        <option value="urgente">Urgente</option>
+        <option value="normal">Normal</option>
+        <option value="planejado">Planejado</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveEntry()">Salvar no calendario</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TABS ──────────────────────────────────────────────
+const mapsInited = new Set();
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (!mapsInited.has(id)) {
+    const mapEl = document.getElementById('worldMap-' + id);
+    if (mapEl) {
+      const raw = mapEl.dataset.countries;
+      if (raw) { try { initMapInContainer('worldMap-' + id, JSON.parse(raw)); mapsInited.add(id); } catch(e){} }
+      else {
+        const varName = id + 'Countries';
+        if (window[varName]) { initMapInContainer('worldMap-' + id, window[varName]); mapsInited.add(id); }
+      }
+    }
+  }
+}
+
+// ── COPY ──────────────────────────────────────────────
+function toggleCopy(btn) {
+  if (!btn.dataset.orig) btn.dataset.orig = btn.textContent;
+  const c = btn.nextElementSibling;
+  const open = c.classList.toggle('open');
+  btn.textContent = open ? 'Fechar copy de exemplo' : btn.dataset.orig;
+}
+
+// ── WORLD MAP ─────────────────────────────────────────
+const mapColors = {
+  urgente:   { fill: '#1a3aff', stroke: '#4d6fff', glow: '#004dff' },
+  normal:    { fill: '#7c4f00', stroke: '#f59e0b', glow: '#f59e0b' },
+  planejado: { fill: '#005c28', stroke: '#00a03e', glow: '#00a03e' }
+};
+let _worldAtlasCache = null;
+function getWorldAtlas() {
+  if (_worldAtlasCache) return Promise.resolve(_worldAtlasCache);
+  return fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(r => r.json()).then(data => { _worldAtlasCache = data; return data; });
+}
+function initMapInContainer(containerId, highlightedCountries) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const w = container.clientWidth || 900;
+  const h = 400;
+  const svg = d3.select('#' + containerId).html('').append('svg')
+    .attr('width','100%').attr('height',h)
+    .attr('viewBox',`0 0 ${w} ${h}`).style('background','#080e1f');
+  const starData = Array.from({length:100},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.1+0.2,o:Math.random()*0.4+0.12}));
+  svg.selectAll('.star').data(starData).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',d=>d.r).attr('fill','white').attr('opacity',d=>d.o);
+  const proj = d3.geoNaturalEarth1().scale(w/6.3).translate([w/2,h/2+18]);
+  const path = d3.geoPath().projection(proj);
+  const g = svg.append('g');
+  svg.call(d3.zoom().scaleExtent([1,8]).on('zoom',e=>g.attr('transform',e.transform)));
+  g.append('path').datum(d3.geoGraticule()()).attr('d',path).attr('fill','none').attr('stroke','rgba(255,255,255,0.04)').attr('stroke-width',0.5);
+  g.append('path').datum({type:'Sphere'}).attr('d',path).attr('fill','#0d1f3c').attr('stroke','#1a3060').attr('stroke-width',1);
+  const tooltip = document.getElementById('mapTooltip');
+  getWorldAtlas().then(world => {
+    const countries = topojson.feature(world, world.objects.countries);
+    g.selectAll('.country').data(countries.features).enter().append('path')
+      .attr('class','country').attr('d',path)
+      .attr('fill',d=>{ const h=highlightedCountries[+d.id]; return h?mapColors[h.prioridade].fill:'#1a2e50'; })
+      .attr('stroke',d=>{ const h=highlightedCountries[+d.id]; return h?mapColors[h.prioridade].stroke:'#243a5e'; })
+      .attr('stroke-width',d=>highlightedCountries[+d.id]?1.2:0.4)
+      .style('filter',d=>{ const h=highlightedCountries[+d.id]; return h?`drop-shadow(0 0 6px ${mapColors[h.prioridade].glow})`:'none'; })
+      .on('mousemove',(event,d)=>{
+        const h=highlightedCountries[+d.id];
+        if(!h){tooltip.style.display='none';return;}
+        tooltip.innerHTML=`<div class="map-tooltip-country">${h.name}</div>${h.temas.map(t=>`<div class="map-tooltip-item">· ${t}</div>`).join('')}`;
+        tooltip.style.display='block'; tooltip.style.left=(event.clientX+14)+'px'; tooltip.style.top=(event.clientY-10)+'px';
+      })
+      .on('mouseleave',()=>{tooltip.style.display='none';});
+    g.append('path').datum(topojson.mesh(world,world.objects.countries,(a,b)=>a!==b)).attr('d',path).attr('fill','none').attr('stroke','#080e1f').attr('stroke-width',0.6);
+    countries.features.forEach(d=>{
+      const h=highlightedCountries[+d.id];
+      if(!h||h.prioridade!=='urgente')return;
+      const c=path.centroid(d); if(!c||isNaN(c[0]))return;
+      g.append('circle').attr('cx',c[0]).attr('cy',c[1]).attr('r',4).attr('fill',mapColors.urgente.glow).attr('stroke','white').attr('stroke-width',1).style('filter','drop-shadow(0 0 4px #004dff)');
+      function addRing(){ g.append('circle').attr('cx',c[0]).attr('cy',c[1]).attr('r',5).attr('fill','none').attr('stroke',mapColors.urgente.glow).attr('stroke-width',1.5).attr('opacity',0.9).transition().duration(1800).ease(d3.easeLinear).attr('r',20).attr('opacity',0).on('end',function(){d3.select(this).remove();}); }
+      addRing(); setInterval(addRing,1800+Math.random()*600);
+    });
+    countries.features.forEach(d=>{
+      const h=highlightedCountries[+d.id];
+      if(!h||h.prioridade==='urgente')return;
+      const c=path.centroid(d); if(!c||isNaN(c[0]))return;
+      g.append('circle').attr('cx',c[0]).attr('cy',c[1]).attr('r',3).attr('fill',mapColors[h.prioridade].stroke).attr('stroke','white').attr('stroke-width',0.8).attr('opacity',0.9);
+    });
+  }).catch(()=>{ container.innerHTML='<div class="map-loading">Mapa indisponivel — verifique a conexao com a internet</div>'; });
+}
+
+// ── CALENDAR ──────────────────────────────────────────
+const STORAGE_KEY = 'amorim_calendar_v2';
+let calOffset = 0;
+function getWeekStart(offset) {
+  const d=new Date(); const day=d.getDay();
+  const diff=d.getDate()-day+(day===0?-6:1)+offset*7;
+  return new Date(new Date().setDate(diff));
+}
+function fmt(d){return d.toISOString().split('T')[0];}
+function fmtShort(d){return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}
+function loadEntries(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch{return[];}}
+function saveEntries(arr){localStorage.setItem(STORAGE_KEY,JSON.stringify(arr));}
+function renderCalendar(){
+  const ws=getWeekStart(calOffset);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d;});
+  const dayNames=['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
+  const todayStr=fmt(new Date());
+  const head=document.getElementById('calHead');
+  head.innerHTML='<div class="cal-grid-head-cell"></div>'+
+    days.map((d,i)=>`<div class="cal-grid-head-cell" style="${fmt(d)===todayStr?'color:var(--blue);font-weight:800;':''}">${dayNames[i]}<br>${fmtShort(d)}</div>`).join('');
+  document.getElementById('calWeekLabel').textContent='Semana de '+fmtShort(days[0])+' a '+fmtShort(days[6]);
+  const entries=loadEntries();
+  [{id:'BR',label:'Instagram BR',rowId:'calRowBR'},{id:'EN',label:'Instagram EN',rowId:'calRowEN'},{id:'LK',label:'LinkedIn',rowId:'calRowLK'}].forEach(canal=>{
+    const row=document.getElementById(canal.rowId);
+    row.innerHTML=`<div class="cal-row-label">${canal.label}</div>`+
+      days.map(d=>{
+        const ds=fmt(d); const isToday=ds===todayStr;
+        const de=entries.filter(e=>e.data===ds&&e.canal===canal.id);
+        const cells=de.map(e=>`<div class="cal-entry entry-${e.prioridade}" onclick="event.stopPropagation()"><strong>${e.tema}</strong><br>${e.formato}<button class="cal-entry-del" onclick="deleteEntry('${e.id}')">x</button></div>`).join('');
+        const hint=de.length===0?'<div class="cal-add-hint">+</div>':'';
+        return `<div class="cal-cell-wrap${isToday?' today':''}" onclick="openModal('','urgente','${canal.id}','${ds}')">${cells}${hint}</div>`;
+      }).join('');
+  });
+}
+function calNav(dir){if(dir===0)calOffset=0;else calOffset+=dir;renderCalendar();}
+
+// ── MODAL ──────────────────────────────────────────────
+function openModal(tema,prioridade,canal,date){
+  document.getElementById('mTema').value=tema||'';
+  document.getElementById('mPrioridade').value=prioridade||'urgente';
+  document.getElementById('mCanal').value=canal||'BR';
+  document.getElementById('mData').value=date||fmt(new Date());
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('mTema').focus(),50);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function saveEntry(){
+  const tema=document.getElementById('mTema').value.trim();
+  if(!tema){document.getElementById('mTema').focus();return;}
+  const entries=loadEntries();
+  entries.push({id:Date.now().toString(),tema,data:document.getElementById('mData').value,canal:document.getElementById('mCanal').value,formato:document.getElementById('mFormato').value,prioridade:document.getElementById('mPrioridade').value});
+  saveEntries(entries); closeModal(); renderCalendar();
+}
+function deleteEntry(id){saveEntries(loadEntries().filter(e=>e.id!==id));renderCalendar();}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+// ── INIT ───────────────────────────────────────────────
+const w1Countries = {
+  76:  {name:'Brasil',         prioridade:'urgente',   temas:['Saida fiscal para brasileiros no exterior','Origem do publico Amorim']},
+  840: {name:'Estados Unidos', prioridade:'urgente',   temas:['EB-2 NIW: Visa Bulletin junho 2026, EB-2 Current para Brasil']},
+  620: {name:'Portugal',       prioridade:'urgente',   temas:['Lei de nacionalidade dobra prazo de naturalizacao','D7, D8, Golden Visa, CPLP']},
+  276: {name:'Alemanha',       prioridade:'normal',    temas:['Cidadania alema: urgencia documental e mudanca de regras']},
+  826: {name:'Reino Unido',    prioridade:'normal',    temas:['Contexto migratorio europeu, relevante para HDE e patrimonio']},
+  170: {name:'Colombia',       prioridade:'normal',    temas:['Nomade digital nas Americas: requisitos e residencia fiscal']},
+  591: {name:'Panama',         prioridade:'normal',    temas:['Nomade digital nas Americas: requisitos e residencia fiscal']},
+  858: {name:'Uruguai',        prioridade:'normal',    temas:['Nomade digital nas Americas','Expansao Cidadania4U (concorrente)']},
+  380: {name:'Italia',         prioridade:'planejado', temas:['Cidadania italiana: storytelling familiar']},
+  724: {name:'Espanha',        prioridade:'planejado', temas:['Cidadania espanhola: serie mitos da dupla cidadania']},
+  600: {name:'Paraguai',       prioridade:'planejado', temas:['Relocation LATAM: nomade digital']},
+  32:  {name:'Argentina',      prioridade:'planejado', temas:['LATAM / Nomade Digital']}
+};
+mapsInited.add('w1');
+renderCalendar();
+initMapInContainer('worldMap-w1', w1Countries);
+
+var w2Countries = {
+  76:  {name:'Brasil',         prioridade:'urgente',   temas:['IRPF 2026 e Declaracao de Saida Definitiva — prazo 29/05','Origem do publico Amorim','Saida fiscal nao e perda de cidadania/passaporte']},
+  620: {name:'Portugal',       prioridade:'urgente',   temas:['Lei da Nacionalidade Portuguesa 2026','D7, Golden Visa, CPLP e naturalizacao']},
+  380: {name:'Italia',         prioridade:'urgente',   temas:['"Cidadania italiana acabou?" — analise equilibrada sem alarmismo']},
+  840: {name:'Estados Unidos', prioridade:'normal',    temas:['Visa Bulletin junho/2026 e EB2-NIW — "current" nao e aprovacao automatica']},
+  276: {name:'Alemanha',       prioridade:'planejado', temas:['Cidadania alema: §15, prova documental e antepassado antes de 1904']},
+  724: {name:'Espanha',        prioridade:'planejado', temas:['Trilha para profissionais qualificados: EUA, Portugal, Alemanha, Espanha']},
+  858: {name:'Uruguai',        prioridade:'planejado', temas:['LATAM relocation e nomades digitais']},
+  170: {name:'Colombia',       prioridade:'planejado', temas:['LATAM relocation e nomades digitais']},
+  32:  {name:'Argentina',      prioridade:'planejado', temas:['LATAM relocation e nomades digitais']}
+};
+</script>
+</body>
+</html>
